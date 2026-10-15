@@ -24,26 +24,38 @@ test("copies a share link that restores the document without local storage", { t
 
     await page.locator("#share-link").click();
 
-    const status = page.locator("#status");
+    // Copying is async (encode + clipboard), so wait for the status it sets.
+    await page.locator("#status", { hasText: /shareable link/i }).waitFor();
     await assertVisibleText(page, "Release Notes");
-    assert.match(await status.textContent(), /shareable link/i);
 
-    const search = await page.evaluate(() => window.location.search);
-    assert.match(search, /\?d=z[\w-]+$/);
+    const hash = await page.evaluate(() => window.location.hash);
+    assert.match(hash, /^#d=z[\w-]+(&h=[\w%-]+)?$/);
+    assert.equal(await page.evaluate(() => window.location.search), "");
 
     const stored = await page.evaluate(() => localStorage.getItem("md-viewer-document"));
     assert.match(stored, /Release Notes/);
 
     const visitorContext = await browser.newContext();
     const visitor = await visitorContext.newPage();
+    const requested = [];
+    visitor.on("request", (request) => requested.push(request.url()));
     await routeStaticFiles(visitor);
-    await visitor.goto(`${appUrl}${search}`);
+    await visitor.goto(`${appUrl}${hash}`);
 
     await assertVisibleText(visitor, "Release Notes");
     await assertVisibleText(visitor, "Expected Result");
     assert.match(await visitor.locator("#status").textContent(), /Loaded a shared document/);
     assert.equal(await visitor.evaluate(() => localStorage.getItem("md-viewer-document")), null);
-    assert.match(await visitor.evaluate(() => window.location.search), /\?d=z[\w-]+$/);
+    assert.ok(requested.length > 0);
+    assert.ok(requested.every((url) => !url.includes("#") && !url.includes("d=z")), requested.join("\n"));
+
+    await visitor.locator("#outline-list a").last().click();
+    const visitorHash = await visitor.evaluate(() => window.location.hash);
+    assert.ok(visitorHash.startsWith(hash.split("&")[0]), visitorHash);
+    assert.match(visitorHash, /&h=[\w%-]+$/);
+
+    await visitor.reload();
+    await assertVisibleText(visitor, "Release Notes");
     await visitorContext.close();
   } finally {
     await context.close();
@@ -60,7 +72,35 @@ test("shows an error for a broken share link and keeps the session document", { 
     await page.locator("#file-input").setInputFiles(samplePath);
     await page.locator("#preview").getByText("Release Notes").first().waitFor();
 
-    await page.goto(`${appUrl}?d=not-a-payload`);
+    await page.goto(`${appUrl}#d=not-a-payload`);
+    await assertVisibleText(page, "Release Notes");
+    assert.match(await page.locator("#upload-error").textContent(), /not valid/);
+    assert.doesNotMatch(await page.evaluate(() => window.location.hash), /d=/);
+  } finally {
+    await browser.close();
+  }
+});
+
+test("ignores empty and oversized share links without touching the session", { timeout: 20000 }, async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage();
+  await routeStaticFiles(page);
+  try {
+    await page.goto(appUrl);
+    await page.locator("#file-input").setInputFiles(samplePath);
+    await page.locator("#preview").getByText("Release Notes").first().waitFor();
+
+    const empty = await page.evaluate(async () => (await import("/src/share.js")).encodeShare("", "empty.md"));
+    await page.goto("about:blank");
+    await page.goto(`${appUrl}#d=${empty}`);
+    await page.locator("#upload-error", { hasText: "not valid" }).waitFor();
+    await assertVisibleText(page, "Release Notes");
+    assert.match(await page.locator("#upload-error").textContent(), /not valid/);
+    assert.match(await page.evaluate(() => localStorage.getItem("md-viewer-document")), /Release Notes/);
+
+    await page.goto("about:blank");
+    await page.goto(`${appUrl}#d=u${"A".repeat(40000)}`);
+    await page.locator("#upload-error", { hasText: "not valid" }).waitFor();
     await assertVisibleText(page, "Release Notes");
     assert.match(await page.locator("#upload-error").textContent(), /not valid/);
   } finally {

@@ -11,11 +11,11 @@ import { escapeHtml } from "./html.js";
 import { clearDocument, readDocument, storeDocument } from "./session.js";
 import {
   MAX_SHARE_URL_LENGTH,
+  buildShareHash,
   buildShareUrl,
   decodeShare,
   encodeShare,
-  readSharePayload,
-  stripShareParam
+  parseShareHash
 } from "./share.js";
 import { SHORTCUTS, matchShortcut } from "./shortcuts.js";
 import {
@@ -26,7 +26,7 @@ import {
   resolveInitialTheme,
   storeTheme
 } from "./theme.js";
-import { buildToc, findHeadingById, headingHref } from "./toc.js";
+import { buildToc, decodeHash, findHeadingById } from "./toc.js";
 
 const storage = window.localStorage;
 
@@ -108,6 +108,21 @@ let headings = [];
 let toc = [];
 let activeId = "";
 let outlineDismissed = false;
+// Payload of the shared document on screen; heading hashes keep it so scrolling
+// or following the outline never drops the document from the link.
+let sharePayload = "";
+
+function headingFragment(id) {
+  return buildShareHash(sharePayload, id);
+}
+
+function replaceHash(hash) {
+  history.replaceState(null, "", `${window.location.pathname}${window.location.search}${hash}`);
+}
+
+function hashHeading(hash = window.location.hash) {
+  return decodeHash(parseShareHash(hash).heading);
+}
 
 function setDocActionsVisible(hasDocument) {
   docActions.hidden = !hasDocument;
@@ -130,7 +145,7 @@ function showStatus(message) {
 
 function renderOutline() {
   outlineList.innerHTML = toc
-    .map((heading) => `<li class="outline-item outline-depth-${heading.depth}"><a href="${headingHref(heading)}" data-heading="${escapeHtml(heading.id)}">${escapeHtml(heading.text)}</a></li>`)
+    .map((heading) => `<li class="outline-item outline-depth-${heading.depth}"><a href="${escapeHtml(headingFragment(heading.id))}" data-heading="${escapeHtml(heading.id)}">${escapeHtml(heading.text)}</a></li>`)
     .join("");
   setOutlineVisible(!outlineDismissed);
   setActiveHeading(currentHashId());
@@ -147,15 +162,17 @@ function showMarkdown(nextMarkdown, name = "", options = {}) {
   preview.innerHTML = result.html;
   document.title = result.title ? `${result.title} · Markdown Viewer` : "Markdown Viewer";
 
-  if (markdown === "") {
-    clearDocument(storage);
-  } else if (options.persist !== false) {
-    storeDocument(storage, markdown, documentName);
+  // Shared documents are never persisted, and must not touch the stored session.
+  if (options.persist !== false) {
+    if (markdown === "") {
+      clearDocument(storage);
+    } else {
+      storeDocument(storage, markdown, documentName);
+    }
   }
 
-  if (!options.keepShare) {
-    history.replaceState(null, "", stripShareParam(window.location));
-  }
+  sharePayload = options.sharePayload ?? "";
+  replaceHash(headingFragment(hashHeading()));
 
   setDocActionsVisible(markdown !== "");
 
@@ -183,7 +200,8 @@ function resetDocument() {
   preview.innerHTML = placeholderHtml;
   document.title = "Markdown Viewer";
   clearDocument(storage);
-  history.replaceState(null, "", stripShareParam(window.location, { keepHash: false }));
+  sharePayload = "";
+  replaceHash("");
   setDocActionsVisible(false);
   renderOutline();
   showStatus("Cleared the stored document.");
@@ -326,13 +344,13 @@ outlineList.addEventListener("click", (event) => {
     return;
   }
 
-  history.replaceState(null, "", headingHref(heading));
+  replaceHash(headingFragment(heading.id));
   setActiveHeading(heading.id);
   scrollToHeading(heading.id, { smooth: true });
 });
 
 function currentHashId() {
-  const heading = findHeadingById(headings, window.location.hash);
+  const heading = findHeadingById(headings, hashHeading());
   return heading?.id ?? "";
 }
 
@@ -349,7 +367,7 @@ function scrollToHeading(id, options = {}) {
 }
 
 function scrollToHash(hash, options = {}) {
-  const heading = findHeadingById(headings, hash);
+  const heading = findHeadingById(headings, hashHeading(hash));
   if (!heading) {
     return false;
   }
@@ -396,7 +414,7 @@ function updateScrollSpy() {
   }
 
   if (current !== activeId) {
-    history.replaceState(null, "", headingHref(current));
+    replaceHash(headingFragment(current));
     setActiveHeading(current);
   }
 }
@@ -412,7 +430,13 @@ window.addEventListener("scroll", () => {
   });
 }, { passive: true });
 
-window.addEventListener("hashchange", () => {
+window.addEventListener("hashchange", async () => {
+  // A share link pasted over the current page only changes the hash.
+  const { payload } = parseShareHash(window.location.hash);
+  if (payload !== null && payload !== sharePayload) {
+    await loadSharedDocument(payload);
+    return;
+  }
   scrollToHash(window.location.hash, { smooth: true });
 });
 
@@ -439,20 +463,22 @@ async function copyShareLink() {
     return;
   }
 
-  let url;
+  let payload;
   try {
-    url = buildShareUrl(window.location, await encodeShare(markdown, documentName));
+    payload = await encodeShare(markdown, documentName);
   } catch {
     showStatus("The document could not be encoded.");
     return;
   }
 
+  const url = buildShareUrl(window.location, payload, hashHeading());
   if (url.length > MAX_SHARE_URL_LENGTH) {
     showStatus(`This document is too large for a link (${url.length} characters). Share the file instead.`);
     return;
   }
 
-  history.replaceState(null, "", url);
+  sharePayload = payload;
+  replaceHash(headingFragment(hashHeading()));
   try {
     await navigator.clipboard.writeText(url);
     showStatus("Copied a shareable link to the clipboard.");
@@ -575,27 +601,24 @@ function restoreSession() {
 }
 
 async function start() {
-  if (await loadSharedDocument()) {
+  const { payload } = parseShareHash(window.location.hash);
+  if (payload !== null && await loadSharedDocument(payload)) {
     return;
   }
   restoreSession();
 }
 
-async function loadSharedDocument() {
-  const payload = readSharePayload(window.location.search);
-  if (payload === null) {
-    return false;
-  }
-
+async function loadSharedDocument(payload) {
   const shared = await decodeShare(payload);
   if (!shared) {
+    replaceHash(headingFragment(hashHeading()));
     showError("The shared link is not valid.");
     return false;
   }
 
   clearError();
   showMarkdown(shared.markdown, shared.name, {
-    keepShare: true,
+    sharePayload: payload,
     persist: false,
     message: "Loaded a shared document from the link."
   });
