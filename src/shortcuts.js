@@ -4,6 +4,7 @@ export const SHORTCUTS = [
   { action: "bigger-text", keys: ["+", "="], label: "Increase text size" },
   { action: "smaller-text", keys: ["-"], label: "Decrease text size" },
   { action: "copy-html", keys: ["C"], label: "Copy the rendered HTML" },
+  { action: "share-link", keys: ["S"], label: "Copy a shareable link" },
   { action: "print", keys: ["P"], label: "Print or save as PDF" },
   { action: "close-toc", keys: ["Esc"], label: "Close the outline" }
 ];

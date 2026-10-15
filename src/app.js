@@ -9,6 +9,14 @@ import {
 } from "./font-size.js";
 import { escapeHtml } from "./html.js";
 import { clearDocument, readDocument, storeDocument } from "./session.js";
+import {
+  MAX_SHARE_URL_LENGTH,
+  buildShareUrl,
+  decodeShare,
+  encodeShare,
+  readSharePayload,
+  stripShareParam
+} from "./share.js";
 import { SHORTCUTS, matchShortcut } from "./shortcuts.js";
 import {
   DARK_QUERY,
@@ -33,6 +41,7 @@ const workspace = document.querySelector("#workspace");
 const outlineList = document.querySelector("#outline-list");
 const outlineToggle = document.querySelector("#toc-toggle");
 const copyButton = document.querySelector("#copy-html");
+const shareButton = document.querySelector("#share-link");
 const printButton = document.querySelector("#print");
 const clearButton = document.querySelector("#clear");
 const textBigger = document.querySelector("#text-bigger");
@@ -140,8 +149,12 @@ function showMarkdown(nextMarkdown, name = "", options = {}) {
 
   if (markdown === "") {
     clearDocument(storage);
-  } else {
+  } else if (options.persist !== false) {
     storeDocument(storage, markdown, documentName);
+  }
+
+  if (!options.keepShare) {
+    history.replaceState(null, "", stripShareParam(window.location));
   }
 
   setDocActionsVisible(markdown !== "");
@@ -170,7 +183,7 @@ function resetDocument() {
   preview.innerHTML = placeholderHtml;
   document.title = "Markdown Viewer";
   clearDocument(storage);
-  history.replaceState(null, "", `${location.pathname}${location.search}`);
+  history.replaceState(null, "", stripShareParam(window.location, { keepHash: false }));
   setDocActionsVisible(false);
   renderOutline();
   showStatus("Cleared the stored document.");
@@ -420,6 +433,36 @@ async function copyHtml() {
 
 copyButton.addEventListener("click", copyHtml);
 
+async function copyShareLink() {
+  if (markdown === "") {
+    showStatus("There is nothing to share yet.");
+    return;
+  }
+
+  let url;
+  try {
+    url = buildShareUrl(window.location, await encodeShare(markdown, documentName));
+  } catch {
+    showStatus("The document could not be encoded.");
+    return;
+  }
+
+  if (url.length > MAX_SHARE_URL_LENGTH) {
+    showStatus(`This document is too large for a link (${url.length} characters). Share the file instead.`);
+    return;
+  }
+
+  history.replaceState(null, "", url);
+  try {
+    await navigator.clipboard.writeText(url);
+    showStatus("Copied a shareable link to the clipboard.");
+  } catch {
+    showStatus("The shareable link is ready in the address bar.");
+  }
+}
+
+shareButton.addEventListener("click", copyShareLink);
+
 printButton.addEventListener("click", () => window.print());
 
 let fontSize = resolveInitialFontSize(readFontSize(storage));
@@ -489,6 +532,9 @@ document.addEventListener("keydown", (event) => {
     case "copy-html":
       copyHtml();
       break;
+    case "share-link":
+      copyShareLink();
+      break;
     case "print":
       window.print();
       break;
@@ -506,7 +552,7 @@ document.addEventListener("keydown", (event) => {
 syncTheme(theme);
 syncFontSize();
 renderShortcuts();
-restoreSession();
+start();
 
 function renderShortcuts() {
   if (shortcutList.children.length > 0) {
@@ -526,4 +572,32 @@ function restoreSession() {
   showMarkdown(stored.markdown, stored.name, {
     message: stored.name ? `Restored ${stored.name} from your last session.` : "Restored your last document."
   });
+}
+
+async function start() {
+  if (await loadSharedDocument()) {
+    return;
+  }
+  restoreSession();
+}
+
+async function loadSharedDocument() {
+  const payload = readSharePayload(window.location.search);
+  if (payload === null) {
+    return false;
+  }
+
+  const shared = await decodeShare(payload);
+  if (!shared) {
+    showError("The shared link is not valid.");
+    return false;
+  }
+
+  clearError();
+  showMarkdown(shared.markdown, shared.name, {
+    keepShare: true,
+    persist: false,
+    message: "Loaded a shared document from the link."
+  });
+  return true;
 }

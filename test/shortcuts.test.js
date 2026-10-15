@@ -13,6 +13,7 @@ test("maps the documented keys to actions", () => {
   assert.equal(matchShortcut(keyEvent("=")), "bigger-text");
   assert.equal(matchShortcut(keyEvent("-")), "smaller-text");
   assert.equal(matchShortcut(keyEvent("c")), "copy-html");
+  assert.equal(matchShortcut(keyEvent("s")), "share-link");
   assert.equal(matchShortcut(keyEvent("p")), "print");
   assert.equal(matchShortcut(keyEvent("Escape")), "close-toc");
   assert.equal(matchShortcut(keyEvent("Esc")), "close-toc");

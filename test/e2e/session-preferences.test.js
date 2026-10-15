@@ -169,7 +169,8 @@ test("lists the keyboard shortcuts in the help panel", { timeout: 20000 }, async
 
     assert.ok(shortcuts.some((text) => text.includes("Toggle dark mode")));
     assert.ok(shortcuts.some((text) => text.includes("Increase text size")));
-    assert.equal(shortcuts.length, 7);
+    assert.ok(shortcuts.some((text) => text.includes("Copy a shareable link")));
+    assert.equal(shortcuts.length, 8);
   } finally {
     await browser.close();
   }
