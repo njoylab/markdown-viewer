@@ -3,7 +3,28 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Markdown Viewer</title>
+    <title>Markdown Viewer — Preview Markdown Files in Your Browser</title>
+    <meta
+      name="description"
+      content="Free browser-based Markdown viewer. Drop, paste or upload a .md file to preview headings, tables, task lists and code blocks, with dark mode, outline, export and printing. Nothing is uploaded."
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#121316" media="(prefers-color-scheme: dark)" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Markdown Viewer — Preview Markdown Files in Your Browser" />
+    <meta
+      property="og:description"
+      content="Drop, paste or upload a Markdown file to preview it as formatted HTML. Tables, task lists, syntax highlighting, outline, export and dark mode, all in your browser."
+    />
+    <meta property="og:site_name" content="Markdown Viewer" />
+    <meta property="og:locale" content="en" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Markdown Viewer — Preview Markdown Files in Your Browser" />
+    <meta
+      name="twitter:description"
+      content="Drop, paste or upload a Markdown file to preview it as formatted HTML. Tables, task lists, syntax highlighting, outline, export and dark mode."
+    />
     <link rel="icon" href="data:," />
     <script>
       try {
@@ -21,6 +42,30 @@
       } catch (error) {}
     </script>
     <link rel="stylesheet" href="./src/styles.css?v=__ASSET_VERSION__" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Markdown Viewer",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires a modern browser with JavaScript enabled",
+        "description": "Free browser-based Markdown viewer. Drop, paste or upload a .md file to preview headings, tables, task lists and code blocks, with dark mode, outline, export and printing.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "featureList": [
+          "Drag-and-drop and paste Markdown preview",
+          "GitHub-flavoured tables and task lists",
+          "Syntax highlighting for fenced code blocks",
+          "Document outline with scroll tracking",
+          "Export to HTML, print or save as PDF",
+          "Dark and light themes with text size control"
+        ]
+      }
+    </script>
   </head>
   <body>
     <main class="shell">
@@ -53,6 +98,12 @@
                 <circle cx="3.5" cy="6" r="1.5" />
                 <circle cx="3.5" cy="12" r="1.5" />
                 <circle cx="3.5" cy="18" r="1.5" />
+              </svg>
+            </button>
+            <button id="edit-toggle" class="icon-button" type="button" title="Edit Markdown" aria-label="Edit Markdown source" aria-pressed="false">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
               </svg>
             </button>
             <button id="share-link" class="icon-button" type="button" title="Copy share link" aria-label="Copy a shareable link">
@@ -109,6 +160,7 @@
             </div>
           </div>
         </article>
+        <textarea id="editor" class="editor" aria-label="Markdown source" spellcheck="false" hidden></textarea>
       </section>
     </main>
 

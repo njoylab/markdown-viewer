@@ -81,9 +81,20 @@ if (/__ASSET_VERSION__/.test(html)) {
 await writeFile(join(outDir, "index.html"), html);
 await writeFile(
   join(outDir, "_headers"),
-  ["/index.html", "  Cache-Control: public, max-age=0, must-revalidate", "", "/src/*", "  Cache-Control: public, max-age=31536000, immutable", ""].join("\n")
+  [
+    "/index.html",
+    "  Cache-Control: public, max-age=0, must-revalidate",
+    "",
+    "/robots.txt",
+    "  Cache-Control: public, max-age=3600",
+    "",
+    "/src/*",
+    "  Cache-Control: public, max-age=31536000, immutable",
+    ""
+  ].join("\n")
 );
 await cp(join(root, ".nojekyll"), join(outDir, ".nojekyll"));
+await cp(join(root, "robots.txt"), join(outDir, "robots.txt"));
 
 console.log(`Built ${modules.length} modules into dist/`);
 
