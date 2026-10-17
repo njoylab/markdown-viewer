@@ -1,4 +1,4 @@
-# Markdown Viewer Test Repo
+# Markdown Viewer Repo
 
 Small browser app used as a target repository for the GitHub issue bugfix agent.
 
