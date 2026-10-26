@@ -1,20 +1,20 @@
 :root {
-  color-scheme: light;
-  --bg: #f6f7f9;
-  --surface: #ffffff;
-  --surface-muted: #eef1f5;
-  --surface-hover: #f2f4f7;
-  --text: #202124;
-  --muted: #62666d;
-  --border: #d8dbe0;
-  --border-strong: #202124;
-  --accent: #0b57d0;
-  --accent-contrast: #ffffff;
-  --danger: #b3261e;
-  --shadow: rgb(32 33 36 / 8%);
-  --pulse: rgb(32 33 36 / 24%);
-  --code-bg: #15171a;
-  --code-text: #f5f7fa;
+  color-scheme: dark;
+  --bg: var(--color-bg-primary);
+  --surface: var(--color-bg-secondary);
+  --surface-muted: var(--color-bg-tertiary);
+  --surface-hover: var(--color-bg-tertiary);
+  --text: var(--color-text-primary);
+  --muted: var(--color-text-secondary);
+  --border: var(--color-border);
+  --border-strong: var(--color-text-primary);
+  --accent: var(--color-accent-blue);
+  --accent-contrast: #fff;
+  --danger: var(--color-error);
+  --shadow: rgb(0 0 0 / 45%);
+  --pulse: rgb(10 132 255 / 24%);
+  --code-bg: #0d0f12;
+  --code-text: var(--color-text-primary);
   --tok-comment: #8b949e;
   --tok-string: #a5d6ff;
   --tok-number: #f0b072;
@@ -24,29 +24,20 @@
   --tok-tag: #7ee787;
   --tok-attr: #79c0ff;
   --tok-var: #ffa657;
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
   color: var(--text);
   background: var(--bg);
 }
 
+:root[data-theme="light"] {
+  color-scheme: light;
+  --shadow: rgb(32 33 36 / 8%);
+  --pulse: rgb(32 33 36 / 24%);
+  --code-bg: #15171a;
+}
+
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #121316;
-  --surface: #1b1d21;
-  --surface-muted: #26292f;
-  --surface-hover: #2c3037;
-  --text: #e6e8ec;
-  --muted: #a2a8b3;
-  --border: #343841;
-  --border-strong: #e6e8ec;
-  --accent: #8ab4f8;
-  --accent-contrast: #0b1220;
-  --danger: #f2b8b5;
-  --shadow: rgb(0 0 0 / 45%);
-  --pulse: rgb(230 232 236 / 22%);
-  --code-bg: #0d0f12;
-  --code-text: #e9edf3;
 }
 
 * {
@@ -74,9 +65,13 @@ body.is-dragging::after {
 }
 
 .shell {
-  width: min(1040px, calc(100% - 32px));
-  margin: 0 auto;
-  padding: 32px 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.section.no-border {
+  padding-top: 0;
 }
 
 .toolbar {
@@ -313,7 +308,7 @@ h1 {
 
 .outline {
   position: sticky;
-  top: 24px;
+  top: 5.5rem;
   max-height: calc(100vh - 48px);
   overflow-y: auto;
   padding-right: 4px;
@@ -394,7 +389,7 @@ h1 {
 .preview h6 {
   margin: 1.2em 0 0.35em;
   line-height: 1.15;
-  scroll-margin-top: 24px;
+  scroll-margin-top: 6rem;
 }
 
 .preview h1:first-child,
@@ -610,7 +605,7 @@ h1 {
   color: var(--tok-var);
 }
 
-@media (max-width: 680px) {
+@media (max-width: 768px) {
   .toolbar {
     align-items: flex-start;
     flex-direction: column;
@@ -639,6 +634,12 @@ h1 {
 }
 
 @media print {
+  .navbar,
+  .footer,
+  .hero,
+  .skip-link,
+  #contact,
+  .section-header,
   .toolbar,
   .outline,
   .shortcuts,

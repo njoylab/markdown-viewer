@@ -1,169 +1,269 @@
-<!doctype html>
+<!DOCTYPE HTML>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Markdown Viewer — Preview Markdown Files in Your Browser</title>
-    <meta
-      name="description"
-      content="Free browser-based Markdown viewer. Drop, paste or upload a .md file to preview headings, tables, task lists and code blocks, with dark mode, outline, export and printing. Nothing is uploaded."
-    />
-    <meta name="robots" content="index, follow" />
-    <meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#121316" media="(prefers-color-scheme: dark)" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="Markdown Viewer — Preview Markdown Files in Your Browser" />
-    <meta
-      property="og:description"
-      content="Drop, paste or upload a Markdown file to preview it as formatted HTML. Tables, task lists, syntax highlighting, outline, export and dark mode, all in your browser."
-    />
-    <meta property="og:site_name" content="Markdown Viewer" />
-    <meta property="og:locale" content="en" />
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Markdown Viewer — Preview Markdown Files in Your Browser" />
-    <meta
-      name="twitter:description"
-      content="Drop, paste or upload a Markdown file to preview it as formatted HTML. Tables, task lists, syntax highlighting, outline, export and dark mode."
-    />
-    <link rel="icon" href="data:," />
-    <script>
-      try {
-        var stored = localStorage.getItem("md-viewer-theme");
-        var theme = stored === "light" || stored === "dark"
-          ? stored
-          : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-        document.documentElement.dataset.theme = theme;
-        document.documentElement.style.colorScheme = theme;
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Markdown Viewer — Preview Markdown Files in Your Browser</title>
+		<meta
+			name="description"
+			content="Free browser-based Markdown viewer. Drop, paste or upload a .md file to preview headings, tables, task lists and code blocks, with dark mode, outline, export and printing. Nothing is uploaded."
+		/>
+		<meta name="author" content="Emiliano Saurin" />
+		<meta name="robots" content="index, follow" />
+		<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+		<meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content="Markdown Viewer — Preview Markdown Files in Your Browser" />
+		<meta
+			property="og:description"
+			content="Drop, paste or upload a Markdown file to preview it as formatted HTML. Tables, task lists, syntax highlighting, outline, export and dark mode, all in your browser."
+		/>
+		<meta property="og:site_name" content="Markdown Viewer" />
+		<meta property="og:locale" content="en" />
+		<meta property="og:image" content="https://www.echovalue.dev/images/echovalue-og.png" />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content="Markdown Viewer — Preview Markdown Files in Your Browser" />
+		<meta
+			name="twitter:description"
+			content="Drop, paste or upload a Markdown file to preview it as formatted HTML. Tables, task lists, syntax highlighting, outline, export and dark mode."
+		/>
+		<meta name="twitter:image" content="https://www.echovalue.dev/images/echovalue-og.png" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+		<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+		<link rel="icon" href="/favicon.ico" />
+		<link rel="manifest" href="/site.webmanifest" />
+		<script>
+			try {
+				var stored = localStorage.getItem("md-viewer-theme");
+				var theme = stored === "light" || stored === "dark"
+					? stored
+					: matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+				document.documentElement.dataset.theme = theme;
+				document.documentElement.style.colorScheme = theme;
 
-        var fontSize = localStorage.getItem("md-viewer-font-size");
-        document.documentElement.dataset.fontSize = ["small", "medium", "large", "xlarge"].indexOf(fontSize) === -1
-          ? "medium"
-          : fontSize;
-      } catch (error) {}
-    </script>
-    <link rel="stylesheet" href="./src/styles.css?v=__ASSET_VERSION__" />
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "Markdown Viewer",
-        "applicationCategory": "UtilitiesApplication",
-        "operatingSystem": "Any",
-        "browserRequirements": "Requires a modern browser with JavaScript enabled",
-        "description": "Free browser-based Markdown viewer. Drop, paste or upload a .md file to preview headings, tables, task lists and code blocks, with dark mode, outline, export and printing.",
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
-        },
-        "featureList": [
-          "Drag-and-drop and paste Markdown preview",
-          "GitHub-flavoured tables and task lists",
-          "Syntax highlighting for fenced code blocks",
-          "Document outline with scroll tracking",
-          "Export to HTML, print or save as PDF",
-          "Dark and light themes with text size control"
-        ]
-      }
-    </script>
-  </head>
-  <body>
-    <main class="shell">
-      <section class="toolbar" aria-label="Markdown upload">
-        <div>
-          <h1>Markdown Viewer</h1>
-          <p>Load a local Markdown file and preview it as formatted HTML.</p>
-          <p class="toolbar-hint">Drop a file anywhere, paste with Ctrl/Cmd+V, or upload below.</p>
-          <p id="upload-error" class="upload-error" role="alert" hidden></p>
-          <p id="status" class="status" role="status" hidden></p>
-        </div>
-        <div class="toolbar-actions">
-          <button id="theme-toggle" class="icon-button theme-toggle" type="button" title="Dark mode" aria-label="Switch to dark mode" aria-pressed="false">
-            <svg class="icon icon-moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />
-            </svg>
-            <svg class="icon icon-sun" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <circle cx="12" cy="12" r="4" />
-              <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-            </svg>
-          </button>
-          <div class="doc-actions" id="doc-actions" hidden>
-            <div class="text-size" role="group" aria-label="Text size">
-              <button id="text-smaller" class="text-size-button" type="button" title="Smaller text (-)" aria-label="Smaller text">A&minus;</button>
-              <button id="text-bigger" class="text-size-button" type="button" title="Bigger text (+)" aria-label="Bigger text">A+</button>
-            </div>
-            <button id="toc-toggle" class="icon-button" type="button" title="Outline" aria-label="Toggle outline" aria-pressed="false" aria-controls="outline">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M8 6h13M8 12h13M8 18h13" />
-                <circle cx="3.5" cy="6" r="1.5" />
-                <circle cx="3.5" cy="12" r="1.5" />
-                <circle cx="3.5" cy="18" r="1.5" />
-              </svg>
-            </button>
-            <button id="edit-toggle" class="icon-button" type="button" title="Edit Markdown" aria-label="Edit Markdown source" aria-pressed="false">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M12 20h9" />
-                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-              </svg>
-            </button>
-            <button id="share-link" class="icon-button" type="button" title="Copy share link" aria-label="Copy a shareable link">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5" />
-                <path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5" />
-              </svg>
-            </button>
-            <button id="copy-html" class="icon-button" type="button" title="Copy HTML" aria-label="Copy HTML">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <rect x="9" y="9" width="12" height="12" rx="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
-            </button>
-            <button id="print" class="icon-button" type="button" title="Print" aria-label="Print">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M6 9V3h12v6" />
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                <rect x="6" y="14" width="12" height="8" rx="1" />
-              </svg>
-            </button>
-            <button id="clear" class="icon-button" type="button" title="Clear" aria-label="Clear document">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M3 6h18M8 6V4h8v2M18.5 6l-1 14h-11l-1-14" />
-              </svg>
-            </button>
-          </div>
-          <label class="upload-button">
-            <span>Upload .md</span>
-            <input id="file-input" type="file" accept=".md,.markdown,text/markdown,text/plain" />
-          </label>
-        </div>
-        <details id="shortcuts" class="shortcuts">
-          <summary>Keyboard shortcuts</summary>
-          <dl id="shortcut-list"></dl>
-        </details>
-      </section>
+				var fontSize = localStorage.getItem("md-viewer-font-size");
+				document.documentElement.dataset.fontSize = ["small", "medium", "large", "xlarge"].indexOf(fontSize) === -1
+					? "medium"
+					: fontSize;
+			} catch (error) {}
+		</script>
+		<link rel="stylesheet" href="assets/css/dev-theme.css?v=11" />
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous" />
+		<link rel="stylesheet" href="./src/styles.css?v=__ASSET_VERSION__" />
+		<script type="application/ld+json">
+			{
+				"@context": "https://schema.org",
+				"@type": "WebApplication",
+				"name": "Markdown Viewer",
+				"applicationCategory": "UtilitiesApplication",
+				"operatingSystem": "Any",
+				"browserRequirements": "Requires a modern browser with JavaScript enabled",
+				"description": "Free browser-based Markdown viewer. Drop, paste or upload a .md file to preview headings, tables, task lists and code blocks, with dark mode, outline, export and printing.",
+				"offers": {
+					"@type": "Offer",
+					"price": "0",
+					"priceCurrency": "USD"
+				},
+				"featureList": [
+					"Drag-and-drop and paste Markdown preview",
+					"GitHub-flavoured tables and task lists",
+					"Syntax highlighting for fenced code blocks",
+					"Document outline with scroll tracking",
+					"Export to HTML, print or save as PDF",
+					"Dark and light themes with text size control"
+				]
+			}
+		</script>
+	</head>
+	<body>
+		<a href="#main" class="skip-link">Skip to content</a>
 
-      <section class="workspace" id="workspace">
-        <nav id="outline" class="outline" aria-label="Table of contents" hidden>
-          <p class="outline-title">On this page</p>
-          <ol id="outline-list" class="outline-list"></ol>
-        </nav>
-        <article id="preview" class="preview" aria-live="polite">
-          <h2>Ready to preview Markdown</h2>
-          <p>Upload a .md or .markdown file to see formatted headings, lists, links and code blocks here.</p>
-          <div class="examples" aria-label="Example Markdown documents">
-            <h3>Try an example</h3>
-            <div class="example-actions">
-              <button type="button" data-example="release-notes">Release notes</button>
-              <button type="button" data-example="project-plan">Project plan</button>
-              <button type="button" data-example="technical-note">Technical note</button>
-              <button type="button" data-example="frontmatter">Frontmatter</button>
-            </div>
-          </div>
-        </article>
-        <textarea id="editor" class="editor" aria-label="Markdown source" spellcheck="false" hidden></textarea>
-      </section>
-    </main>
+		<nav class="navbar">
+			<div class="container">
+				<a href="/" class="navbar-brand">Markdown Viewer</a>
+				<button id="theme-toggle" class="theme-toggle" type="button" title="Dark mode" aria-label="Switch to dark mode" aria-pressed="false">
+					<i class="fa-solid fa-moon"></i>
+					<i class="fa-solid fa-sun"></i>
+				</button>
+				<button class="navbar-toggle" type="button" aria-label="Toggle navigation">
+					<span></span>
+					<span></span>
+					<span></span>
+				</button>
+				<ul class="navbar-nav">
+					<li><a href="#workspace">Preview</a></li>
+					<li><a href="#shortcuts">Shortcuts</a></li>
+					<li><a href="#contact">Contact</a></li>
+					<li><a href="https://dash.echovalue.dev" class="navbar-cta" target="_blank" rel="noopener noreferrer">Dashboard</a></li>
+				</ul>
+			</div>
+		</nav>
 
-    <script type="module" src="./src/app.js?v=__ASSET_VERSION__"></script>
-  </body>
+		<main id="main">
+			<section class="hero compact">
+				<div class="container">
+					<h1><span class="mono">md</span> viewer</h1>
+					<p>Load a local Markdown file and preview it as formatted HTML.</p>
+					<div class="hero-actions">
+						<a href="#workspace" class="btn btn-primary">preview markdown →</a>
+					</div>
+				</div>
+			</section>
+
+			<section class="section no-border">
+				<div class="container">
+					<div class="section-header">
+						<h2>preview</h2>
+						<p>Drop, paste, or upload a local file. Nothing leaves the browser.</p>
+					</div>
+					<div class="shell">
+						<section class="toolbar" aria-label="Markdown upload">
+							<div>
+								<p class="toolbar-hint">Drop a file anywhere, paste with Ctrl/Cmd+V, or upload below.</p>
+								<p id="upload-error" class="upload-error" role="alert" hidden></p>
+								<p id="status" class="status" role="status" hidden></p>
+							</div>
+							<div class="toolbar-actions">
+								<div class="doc-actions" id="doc-actions" hidden>
+									<div class="text-size" role="group" aria-label="Text size">
+										<button id="text-smaller" class="text-size-button" type="button" title="Smaller text (-)" aria-label="Smaller text">A&minus;</button>
+										<button id="text-bigger" class="text-size-button" type="button" title="Bigger text (+)" aria-label="Bigger text">A+</button>
+									</div>
+									<button id="toc-toggle" class="icon-button" type="button" title="Outline" aria-label="Toggle outline" aria-pressed="false" aria-controls="outline">
+										<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+											<path d="M8 6h13M8 12h13M8 18h13" />
+											<circle cx="3.5" cy="6" r="1.5" />
+											<circle cx="3.5" cy="12" r="1.5" />
+											<circle cx="3.5" cy="18" r="1.5" />
+										</svg>
+									</button>
+									<button id="edit-toggle" class="icon-button" type="button" title="Edit Markdown" aria-label="Edit Markdown source" aria-pressed="false">
+										<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+											<path d="M12 20h9" />
+											<path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+										</svg>
+									</button>
+									<button id="share-link" class="icon-button" type="button" title="Copy share link" aria-label="Copy a shareable link">
+										<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+											<path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5" />
+											<path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5" />
+										</svg>
+									</button>
+									<button id="copy-html" class="icon-button" type="button" title="Copy HTML" aria-label="Copy HTML">
+										<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+											<rect x="9" y="9" width="12" height="12" rx="2" />
+											<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+										</svg>
+									</button>
+									<button id="print" class="icon-button" type="button" title="Print" aria-label="Print">
+										<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+											<path d="M6 9V3h12v6" />
+											<path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+											<rect x="6" y="14" width="12" height="8" rx="1" />
+										</svg>
+									</button>
+									<button id="clear" class="icon-button" type="button" title="Clear" aria-label="Clear document">
+										<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+											<path d="M3 6h18M8 6V4h8v2M18.5 6l-1 14h-11l-1-14" />
+										</svg>
+									</button>
+								</div>
+								<label class="upload-button btn btn-primary">
+									<span>Upload .md</span>
+									<input id="file-input" type="file" accept=".md,.markdown,text/markdown,text/plain" />
+								</label>
+							</div>
+							<details id="shortcuts" class="shortcuts">
+								<summary>Keyboard shortcuts</summary>
+								<dl id="shortcut-list"></dl>
+							</details>
+						</section>
+
+						<section class="workspace" id="workspace">
+							<nav id="outline" class="outline" aria-label="Table of contents" hidden>
+								<p class="outline-title">On this page</p>
+								<ol id="outline-list" class="outline-list"></ol>
+							</nav>
+							<article id="preview" class="preview" aria-live="polite">
+								<h2>Ready to preview Markdown</h2>
+								<p>Upload a .md or .markdown file to see formatted headings, lists, links and code blocks here.</p>
+								<div class="examples" aria-label="Example Markdown documents">
+									<h3>Try an example</h3>
+									<div class="example-actions">
+										<button type="button" data-example="release-notes">Release notes</button>
+										<button type="button" data-example="project-plan">Project plan</button>
+										<button type="button" data-example="technical-note">Technical note</button>
+										<button type="button" data-example="frontmatter">Frontmatter</button>
+									</div>
+								</div>
+							</article>
+							<textarea id="editor" class="editor" aria-label="Markdown source" spellcheck="false" hidden></textarea>
+						</section>
+					</div>
+				</div>
+			</section>
+
+			<section id="contact" class="section bg-light">
+				<div class="container">
+					<div class="section-header">
+						<h2>contact</h2>
+						<p>Questions, feedback, or something not working? Get in touch.</p>
+					</div>
+					<div class="contact-info">
+						<div class="contact-item">
+							<h3>Email</h3>
+							support at echovalue dot dev
+						</div>
+						<div class="contact-item">
+							<h3>Social</h3>
+							<div class="social-links">
+								<a href="https://twitter.com/emln_" aria-label="Twitter" target="_blank" rel="noopener noreferrer">
+									<i class="fab fa-twitter"></i>
+								</a>
+								<a href="https://www.linkedin.com/in/emlns/" aria-label="LinkedIn" target="_blank" rel="noopener noreferrer">
+									<i class="fab fa-linkedin"></i>
+								</a>
+								<a href="https://github.com/njoylab" aria-label="GitHub" target="_blank" rel="noopener noreferrer">
+									<i class="fab fa-github"></i>
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+		</main>
+
+		<footer class="footer">
+			<div class="container">
+				<div class="footer-content">
+					<ul class="footer-links">
+						<li><a href="/">Home</a></li>
+						<li><a href="/db-api/">DB API</a></li>
+						<li><a href="/webhook-api/">Webhook API</a></li>
+						<li><a href="https://docs.echovalue.dev" target="_blank" rel="noopener noreferrer">Documentation</a></li>
+						<li><a href="https://dash.echovalue.dev" target="_blank" rel="noopener noreferrer">Dashboard</a></li>
+						<li><a href="/privacy">Privacy</a></li>
+						<li><a href="https://github.com/njoylab" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+						<li><a href="/toc">Terms</a></li>
+					</ul>
+				</div>
+				<div class="footer-bottom">
+					<p>
+						Built by <a href="https://www.njoylab.com" target="_blank" rel="noopener noreferrer">nJoyLab.com</a> ·
+						IT12822520966 · <span class="text-mono">v2.0</span>
+					</p>
+				</div>
+			</div>
+		</footer>
+		<script src="assets/js/nav-toggle.js?v=1"></script>
+		<script type="module" src="./src/app.js?v=__ASSET_VERSION__"></script>
+	</body>
 </html>

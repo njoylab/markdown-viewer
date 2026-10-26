@@ -79,6 +79,19 @@ if (/__ASSET_VERSION__/.test(html)) {
 }
 
 await writeFile(join(outDir, "index.html"), html);
+await cp(join(root, "assets"), join(outDir, "assets"), { recursive: true });
+for (const file of [
+  "favicon.svg",
+  "favicon.ico",
+  "favicon-32x32.png",
+  "favicon-16x16.png",
+  "apple-touch-icon.png",
+  "android-chrome-192x192.png",
+  "android-chrome-512x512.png",
+  "site.webmanifest"
+]) {
+  await cp(join(root, file), join(outDir, file));
+}
 await writeFile(
   join(outDir, "_headers"),
   [
