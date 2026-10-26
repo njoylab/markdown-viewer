@@ -55,7 +55,7 @@
 					: fontSize;
 			} catch (error) {}
 		</script>
-		<link rel="stylesheet" href="assets/css/dev-theme.css?v=12" />
+		<link rel="stylesheet" href="assets/css/dev-theme.css?v=13" />
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous" />
 		<link rel="stylesheet" href="./src/styles.css?v=__ASSET_VERSION__" />
 		<script type="application/ld+json">
@@ -88,7 +88,7 @@
 
 		<nav class="navbar">
 			<div class="container">
-				<a href="/" class="navbar-brand">Markdown Viewer</a>
+				<a href="/" class="navbar-brand">echoValue<span class="brand-product">markdown-viewer</span></a>
 				<button id="theme-toggle" class="theme-toggle" type="button" title="Dark mode" aria-label="Switch to dark mode" aria-pressed="false">
 					<i class="fa-solid fa-moon"></i>
 					<i class="fa-solid fa-sun"></i>
@@ -108,19 +108,14 @@
 		</nav>
 
 		<main id="main">
-			<header class="hero compact">
-				<div class="container">
-					<h1>Markdown Viewer</h1>
-					<p>Local preview. Nothing is uploaded.</p>
-				</div>
-			</header>
-
+			<h1 class="visually-hidden">Markdown Viewer</h1>
 			<section class="section no-border">
 				<div class="container">
 					<div class="shell">
 						<section class="toolbar" aria-label="Markdown upload">
-							<div>
+							<div class="toolbar-copy">
 								<p class="toolbar-hint">Drop a file anywhere, paste with Ctrl/Cmd+V, or upload.</p>
+								<p class="toolbar-note">Local preview. Nothing is uploaded.</p>
 								<p id="upload-error" class="upload-error" role="alert" hidden></p>
 								<p id="status" class="status" role="status" hidden></p>
 							</div>
