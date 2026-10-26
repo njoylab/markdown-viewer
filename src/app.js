@@ -595,9 +595,7 @@ function restoreSession() {
     return;
   }
 
-  showMarkdown(stored.markdown, stored.name, {
-    message: stored.name ? `Restored ${stored.name} from your last session.` : "Restored your last document."
-  });
+  showMarkdown(stored.markdown, stored.name);
 }
 
 async function start() {

@@ -20,7 +20,7 @@ test("restores the last document after a reload", { timeout: 20000 }, async () =
 
     await page.waitForSelector("#preview h1#stored-doc");
     assert.equal(await page.locator("#preview p").last().textContent(), "Kept between visits.");
-    assert.match(await page.locator("#status").textContent(), /Restored your last document/);
+    assert.equal(await page.locator("#status").isHidden(), true);
   } finally {
     await browser.close();
   }
@@ -34,8 +34,9 @@ test("restores the uploaded file name", { timeout: 20000 }, async () => {
 
     await page.reload();
 
-    await page.waitForSelector("#preview");
-    assert.match(await page.locator("#status").textContent(), /Restored sample\.md from your last session/);
+    await page.waitForSelector("#preview h1");
+    assert.match(await page.locator("#preview h1").textContent(), /Release Notes/);
+    assert.equal(await page.locator("#status").isHidden(), true);
     assert.equal(await page.evaluate(() => localStorage.getItem("md-viewer-document-name")), "sample.md");
   } finally {
     await browser.close();

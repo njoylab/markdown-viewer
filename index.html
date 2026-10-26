@@ -55,7 +55,7 @@
 					: fontSize;
 			} catch (error) {}
 		</script>
-		<link rel="stylesheet" href="assets/css/dev-theme.css?v=11" />
+		<link rel="stylesheet" href="assets/css/dev-theme.css?v=12" />
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous" />
 		<link rel="stylesheet" href="./src/styles.css?v=__ASSET_VERSION__" />
 		<script type="application/ld+json">
@@ -108,26 +108,19 @@
 		</nav>
 
 		<main id="main">
-			<section class="hero compact">
+			<header class="hero compact">
 				<div class="container">
-					<h1><span class="mono">md</span> viewer</h1>
-					<p>Load a local Markdown file and preview it as formatted HTML.</p>
-					<div class="hero-actions">
-						<a href="#workspace" class="btn btn-primary">preview markdown →</a>
-					</div>
+					<h1>Markdown Viewer</h1>
+					<p>Local preview. Nothing is uploaded.</p>
 				</div>
-			</section>
+			</header>
 
 			<section class="section no-border">
 				<div class="container">
-					<div class="section-header">
-						<h2>preview</h2>
-						<p>Drop, paste, or upload a local file. Nothing leaves the browser.</p>
-					</div>
 					<div class="shell">
 						<section class="toolbar" aria-label="Markdown upload">
 							<div>
-								<p class="toolbar-hint">Drop a file anywhere, paste with Ctrl/Cmd+V, or upload below.</p>
+								<p class="toolbar-hint">Drop a file anywhere, paste with Ctrl/Cmd+V, or upload.</p>
 								<p id="upload-error" class="upload-error" role="alert" hidden></p>
 								<p id="status" class="status" role="status" hidden></p>
 							</div>
