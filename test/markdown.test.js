@@ -2,6 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { renderMarkdown } from "../src/markdown.js";
 
+test("escapes link destinations exactly once while preserving safe labels", () => {
+  assert.equal(
+    renderMarkdown('[**A & B**](https://example.com/?a=1&b="two")'),
+    '<p><a href="https://example.com/?a=1&amp;b=&quot;two&quot;" rel="noreferrer noopener"><strong>A &amp; B</strong></a></p>'
+  );
+  assert.equal(renderMarkdown('[x](javascript:a&b)'), '<p>[x](javascript:a&amp;b)</p>');
+});
+
 test("renders headings, emphasis and lists", () => {
   const html = renderMarkdown("# Title\n\nA **bold** and *soft* line.\n\n- One\n- Two");
 

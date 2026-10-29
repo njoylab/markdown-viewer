@@ -47,6 +47,28 @@ test("hides the outline when the document has no headings", { timeout: 20000 }, 
   }
 });
 
+test("keeps heading anchors distinct from interface ids across edits and reloads", { timeout: 20000 }, async () => {
+  const { browser, page } = await openPage();
+  try {
+    await paste(page, "## Preview\n\n## Workspace\n\n## Main");
+    const ids = await page.locator("#preview h2").evaluateAll((nodes) => nodes.map((node) => node.id));
+    for (const id of ids) {
+      assert.equal(await page.locator(`[id="${id}"]`).count(), 1);
+    }
+    await page.locator("#outline-list").getByRole("link", { name: "Workspace", exact: true }).click();
+    assert.equal(new URL(page.url()).hash, `#${ids[1]}`);
+    await page.getByRole("button", { name: "Edit Markdown source" }).click();
+    await page.getByRole("textbox", { name: "Markdown source" }).fill("## Preview\n\n## Workspace\n\n## Main\n\nEdited");
+    await page.getByRole("button", { name: "Show Markdown preview" }).click();
+    assert.deepEqual(await page.locator("#preview h2").evaluateAll((nodes) => nodes.map((node) => node.id)), ids);
+    await page.reload();
+    await page.locator("#preview h2").first().waitFor();
+    assert.deepEqual(await page.locator("#preview h2").evaluateAll((nodes) => nodes.map((node) => node.id)), ids);
+  } finally {
+    await browser.close();
+  }
+});
+
 test("scrolls to a heading and updates the hash when an outline link is used", { timeout: 20000 }, async () => {
   const { browser, page } = await openPage();
   try {
@@ -86,13 +108,10 @@ test("restores the document and scrolls to a deep link", { timeout: 20000 }, asy
   try {
     await paste(page, longDocument(8));
 
+    await page.goto("about:blank");
     await page.goto(`${appUrl}#section-6`);
     await page.waitForSelector("#outline:not([hidden])");
-
-    assert.equal(
-      await page.evaluate(() => document.getElementById("section-6").getBoundingClientRect().top < 120),
-      true
-    );
+    await page.waitForFunction(() => document.getElementById("section-6").getBoundingClientRect().top < 120);
     assert.equal(
       await page.locator('.outline-item a[data-heading="section-6"]').getAttribute("aria-current"),
       "true"

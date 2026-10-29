@@ -51,6 +51,16 @@ test("rejects payloads that are not share links", async () => {
   assert.equal(await decodeShare(`u${encodeBase64Url(new TextEncoder().encode(JSON.stringify({ v: 1 })))}`), null);
 });
 
+test("enforces the decoded byte limit when encoding, including metadata and unicode", async () => {
+  const overhead = new TextEncoder().encode(JSON.stringify({ v: 1, n: "", m: "" })).length;
+  const markdown = "a".repeat(MAX_DECODED_BYTES - overhead);
+  const payload = await encodeShare(markdown);
+  assert.deepEqual(await decodeShare(payload), { markdown, name: "" });
+  await assert.rejects(encodeShare(`${markdown}a`), RangeError);
+  await assert.rejects(encodeShare(markdown, "é"), RangeError);
+  await assert.rejects(encodeShare("é".repeat(MAX_DECODED_BYTES / 2)), RangeError);
+});
+
 test("encodes and decodes base64url bytes without padding", () => {
   const bytes = new Uint8Array([251, 255, 190, 0, 1, 2]);
   const encoded = encodeBase64Url(bytes);

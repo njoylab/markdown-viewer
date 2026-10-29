@@ -17,6 +17,9 @@ export async function encodeShare(markdown, name = "") {
     m: String(markdown ?? "")
   });
   const plain = new TextEncoder().encode(json);
+  if (plain.length > MAX_DECODED_BYTES) {
+    throw new RangeError("The shared document is too large");
+  }
   const compressed = await compress(plain);
   const prefix = compressed.length < plain.length ? COMPRESSED_PREFIX : PLAIN_PREFIX;
   const bytes = prefix === COMPRESSED_PREFIX ? compressed : plain;

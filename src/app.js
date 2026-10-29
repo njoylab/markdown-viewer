@@ -8,7 +8,7 @@ import {
   storeFontSize
 } from "./font-size.js";
 import { escapeHtml } from "./html.js";
-import { clearDocument, readDocument, storeDocument } from "./session.js";
+import { MAX_DOCUMENT_LENGTH, clearDocument, readDocument, storeDocument } from "./session.js";
 import {
   MAX_SHARE_URL_LENGTH,
   buildShareHash,
@@ -51,6 +51,8 @@ const textSmaller = document.querySelector("#text-smaller");
 const docActions = document.querySelector("#doc-actions");
 const shortcutList = document.querySelector("#shortcut-list");
 const placeholderHtml = preview.innerHTML;
+// Capture only interface ids, before any document headings are rendered.
+const reservedHeadingIds = Array.from(document.querySelectorAll("[id]"), (element) => element.id);
 const SCROLL_OFFSET = 96;
 const SMOOTH_SCROLL_MS = 800;
 
@@ -164,7 +166,7 @@ function showMarkdown(nextMarkdown, name = "", options = {}) {
     persistCurrentDocument = options.persist !== false;
   }
 
-  const result = renderDocument(markdown);
+  const result = renderDocument(markdown, { reservedIds: reservedHeadingIds });
   headings = result.headings;
   toc = buildToc(headings);
 
@@ -175,8 +177,10 @@ function showMarkdown(nextMarkdown, name = "", options = {}) {
   if (persistCurrentDocument) {
     if (markdown === "") {
       clearDocument(storage);
-    } else {
-      storeDocument(storage, markdown, documentName);
+    } else if (!storeDocument(storage, markdown, documentName)) {
+      showError(markdown.length > MAX_DOCUMENT_LENGTH
+        ? `This document exceeds ${MAX_DOCUMENT_LENGTH.toLocaleString("en-US")} characters and was not saved. Keep a copy before reloading; the last saved document is unchanged.`
+        : "This document was not saved because browser storage is unavailable. Keep a copy before reloading.");
     }
   }
 
@@ -204,6 +208,7 @@ function showMarkdown(nextMarkdown, name = "", options = {}) {
 }
 
 function resetDocument() {
+  clearError();
   markdown = "";
   documentName = "";
   headings = [];
@@ -401,7 +406,7 @@ function scrollToHeading(id, options = {}) {
   if (options.smooth) {
     spyPausedUntil = performance.now() + SMOOTH_SCROLL_MS;
   }
-  target.scrollIntoView({ behavior: options.smooth ? "smooth" : "auto", block: "start" });
+  target.scrollIntoView({ behavior: options.smooth ? "smooth" : "instant", block: "start" });
   return true;
 }
 
@@ -443,7 +448,8 @@ function updateScrollSpy() {
   let current = toc[0].id;
   for (const heading of toc) {
     const element = document.getElementById(heading.id);
-    if (element && element.getBoundingClientRect().top - offset <= 0) {
+    // Scroll positions can round to a pixel while heading bounds remain fractional.
+    if (element && element.getBoundingClientRect().top - offset <= 1) {
       current = heading.id;
     }
   }
@@ -507,8 +513,10 @@ async function copyShareLink() {
   let payload;
   try {
     payload = await encodeShare(source, name);
-  } catch {
-    showStatus("The document could not be encoded.");
+  } catch (error) {
+    showStatus(error instanceof RangeError
+      ? "This document is too large for a link. Share the file instead."
+      : "The document could not be encoded.");
     return;
   }
 

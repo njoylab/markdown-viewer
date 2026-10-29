@@ -202,6 +202,29 @@ async function openPage() {
   return { browser, page };
 }
 
+test("warns about unsaved oversized edits and recovers when they fit again", { timeout: 20000 }, async () => {
+  const { browser, page } = await openPage();
+  try {
+    await paste(page, "# Saved draft");
+    await page.getByRole("button", { name: "Edit Markdown source" }).click();
+    const editor = page.getByRole("textbox", { name: "Markdown source" });
+    const oversized = "a".repeat(500001);
+    await editor.fill(oversized);
+    await page.locator("#upload-error", { hasText: /not saved/i }).waitFor();
+    assert.equal(await editor.inputValue(), oversized);
+    await page.reload();
+    await page.locator("#preview h1", { hasText: "Saved draft" }).waitFor();
+    await page.getByRole("button", { name: "Edit Markdown source" }).click();
+    await editor.fill(oversized);
+    await editor.fill("# Fits again");
+    assert.equal(await page.locator("#upload-error").isHidden(), true);
+    await page.reload();
+    await page.locator("#preview h1", { hasText: "Fits again" }).waitFor();
+  } finally {
+    await browser.close();
+  }
+});
+
 async function paste(page, text) {
   await page.evaluate((value) => {
     const dataTransfer = new DataTransfer();

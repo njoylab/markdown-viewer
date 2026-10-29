@@ -28,3 +28,11 @@ test("keeps slugs unique inside one document", () => {
   assert.equal(slug("Setup"), "setup-2");
   assert.equal(slug("Other"), "other");
 });
+
+test("avoids collisions between generated suffixes and literal heading names", () => {
+  for (const names of [["Foo", "Foo", "Foo-1"], ["Foo-1", "Foo", "Foo"]]) {
+    const slug = createSlugger();
+    const ids = names.map(slug);
+    assert.equal(new Set(ids).size, names.length);
+  }
+});

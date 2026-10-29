@@ -1,11 +1,11 @@
 import { extractFrontmatter, renderFrontmatter } from "./frontmatter.js";
 import { renderMarkdown } from "./markdown.js";
 
-export function renderDocument(markdown) {
+export function renderDocument(markdown, options = {}) {
   const source = String(markdown ?? "");
   const { entries, body } = extractFrontmatter(source);
   const headings = [];
-  const html = renderFrontmatter(entries) + renderMarkdown(body, { headings });
+  const html = renderFrontmatter(entries) + renderMarkdown(body, { headings, reservedIds: options.reservedIds });
 
   return {
     html,

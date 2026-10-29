@@ -33,12 +33,12 @@ test("returns null when nothing is stored", () => {
   assert.equal(readDocument(createStorage({ [DOCUMENT_STORAGE_KEY]: "" })), null);
 });
 
-test("truncates very large documents", () => {
+test("rejects oversized documents without replacing the last complete save", () => {
   const storage = createStorage();
-
-  storeDocument(storage, "a".repeat(MAX_DOCUMENT_LENGTH + 10));
-
-  assert.equal(storage.values.get(DOCUMENT_STORAGE_KEY).length, MAX_DOCUMENT_LENGTH);
+  const markdown = "a".repeat(MAX_DOCUMENT_LENGTH);
+  assert.equal(storeDocument(storage, markdown, "saved.md"), true);
+  assert.equal(storeDocument(storage, `${markdown}TAIL`, "large.md"), false);
+  assert.deepEqual(readDocument(storage), { markdown, name: "saved.md" });
 });
 
 test("clears the stored document when the markdown is empty", () => {

@@ -20,8 +20,11 @@ export function storeDocument(storage, markdown, name = "") {
   if (text === "") {
     return clearDocument(storage);
   }
+  if (text.length > MAX_DOCUMENT_LENGTH) {
+    return false;
+  }
   try {
-    storage.setItem(DOCUMENT_STORAGE_KEY, text.slice(0, MAX_DOCUMENT_LENGTH));
+    storage.setItem(DOCUMENT_STORAGE_KEY, text);
     storage.setItem(DOCUMENT_NAME_STORAGE_KEY, String(name ?? ""));
     return true;
   } catch {

@@ -173,6 +173,23 @@ async function routeStaticFiles(page) {
   });
 }
 
+test("does not publish a link when the document exceeds the decoded limit", { timeout: 20000 }, async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage();
+  await routeStaticFiles(page);
+  try {
+    await page.goto(appUrl);
+    await page.locator("#file-input").setInputFiles({
+      name: "large.md", mimeType: "text/markdown", buffer: Buffer.from("a".repeat(2 * 1024 * 1024))
+    });
+    await page.getByRole("button", { name: "Copy a shareable link" }).click();
+    await page.locator("#status", { hasText: /too large for a link/i }).waitFor();
+    assert.doesNotMatch(new URL(page.url()).hash, /d=/);
+  } finally {
+    await browser.close();
+  }
+});
+
 async function assertVisibleText(page, text) {
   assert.equal(await page.locator("#preview").getByText(text, { exact: true }).first().isVisible(), true);
 }

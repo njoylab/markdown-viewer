@@ -17,7 +17,7 @@ const ALIGNMENT = { left: "align-left", center: "align-center", right: "align-ri
 export function renderMarkdown(markdown, options = {}) {
   const headings = Array.isArray(options.headings) ? options.headings : null;
   const lines = String(markdown).replace(/\r\n?/g, "\n").replace(CONTROL_CHARS, "").split("\n");
-  const slug = createSlugger();
+  const slug = createSlugger(options.reservedIds);
   const headingId = (level, text) => {
     const id = slug(text);
     if (headings) {
@@ -184,7 +184,7 @@ function formatInline(value) {
 
   const flush = () => {
     if (plain.length > 0) {
-      text.push(escapeHtml(plain));
+      text.push(plain);
       plain = "";
     }
   };
@@ -210,15 +210,15 @@ function formatInline(value) {
     .join("")
     .replace(LINK, (match, label, url) => renderLink(label, url, stash));
 
-  return restoreTokens(applyEmphasis(inline), tokens);
+  return restoreTokens(applyEmphasis(escapeHtml(inline)), tokens);
 }
 
 function renderLink(label, rawUrl, stash) {
   const url = safeUrl(rawUrl);
   if (!url) {
-    return `[${label}](${escapeHtml(rawUrl)})`;
+    return `[${label}](${rawUrl})`;
   }
-  return stash(`<a href="${escapeHtml(url)}" rel="noreferrer noopener">${applyEmphasis(label)}</a>`);
+  return stash(`<a href="${escapeHtml(url)}" rel="noreferrer noopener">${applyEmphasis(escapeHtml(label))}</a>`);
 }
 
 function applyEmphasis(text) {

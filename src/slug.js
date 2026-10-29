@@ -21,13 +21,20 @@ export function slugify(value) {
   return text || "section";
 }
 
-export function createSlugger() {
-  const used = new Map();
+export function createSlugger(reservedIds = []) {
+  const used = new Set(reservedIds);
+  const suffixes = new Map();
 
   return function slug(text) {
     const base = slugify(text);
-    const seen = used.get(base) ?? 0;
-    used.set(base, seen + 1);
-    return seen === 0 ? base : `${base}-${seen}`;
+    let suffix = suffixes.get(base) ?? 0;
+    let id = suffix === 0 ? base : `${base}-${suffix}`;
+    while (used.has(id)) {
+      suffix += 1;
+      id = `${base}-${suffix}`;
+    }
+    used.add(id);
+    suffixes.set(base, suffix + 1);
+    return id;
   };
 }
