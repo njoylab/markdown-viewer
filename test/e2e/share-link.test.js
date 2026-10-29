@@ -81,6 +81,44 @@ test("shows an error for a broken share link and keeps the session document", { 
   }
 });
 
+test("edits a shared document without replacing the local session and shares the changes", { timeout: 20000 }, async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage();
+  await routeStaticFiles(page);
+  try {
+    await page.goto(appUrl);
+    await page.locator("#file-input").setInputFiles(samplePath);
+    await page.locator("#preview").getByRole("heading", { name: "Release Notes" }).waitFor();
+    const sharedHash = await page.evaluate(async () => {
+      const { encodeShare } = await import("/src/share.js");
+      return `#d=${await encodeShare("# Shared draft", "shared.md")}`;
+    });
+    await page.goto(`${appUrl}${sharedHash}`);
+    await page.locator("#preview").getByRole("heading", { name: "Shared draft" }).waitFor();
+    await page.getByRole("button", { name: "Edit Markdown source" }).click();
+    await page.getByRole("textbox", { name: "Markdown source" }).fill("# Edited shared draft");
+    assert.doesNotMatch(await page.evaluate(() => window.location.hash), /d=/);
+    await page.getByRole("button", { name: "Show Markdown preview" }).click();
+    await assertVisibleText(page, "Edited shared draft");
+    assert.match(await page.evaluate(() => localStorage.getItem("md-viewer-document")), /Release Notes/);
+
+    await page.getByRole("button", { name: "Copy a shareable link" }).click();
+    await page.locator("#status", { hasText: /shareable link/i }).waitFor();
+    const updatedUrl = page.url();
+    const visitor = await browser.newPage();
+    await routeStaticFiles(visitor);
+    await visitor.goto(updatedUrl);
+    await visitor.locator("#preview").getByRole("heading", { name: "Edited shared draft" }).waitFor();
+    await visitor.getByRole("button", { name: "Edit Markdown source" }).click();
+    assert.equal(await visitor.getByRole("textbox", { name: "Markdown source" }).inputValue(), "# Edited shared draft");
+    await page.goto(appUrl);
+    await page.reload();
+    await assertVisibleText(page, "Release Notes");
+  } finally {
+    await browser.close();
+  }
+});
+
 test("ignores empty and oversized share links without touching the session", { timeout: 20000 }, async () => {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();

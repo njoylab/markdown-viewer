@@ -59,6 +59,79 @@ test("uploads and renders a markdown file", { timeout: 15000 }, async () => {
   }
 });
 
+test("edits an uploaded file and restores the edited document on reload", { timeout: 15000 }, async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage();
+  await routeStaticFiles(page);
+  try {
+    await page.goto(appUrl);
+    await page.locator("#file-input").setInputFiles(samplePath);
+    const toggle = page.locator("#edit-toggle");
+    await toggle.click();
+
+    const editor = page.getByRole("textbox", { name: "Markdown source" });
+    await editor.waitFor({ state: "visible", timeout: 1500 });
+    assert.equal(await editor.inputValue(), (await readFile(samplePath, "utf8")).replaceAll("\r\n", "\n"));
+    assert.equal(await editor.evaluate((element) => element === document.activeElement), true);
+    assert.equal(await toggle.getAttribute("aria-pressed"), "true");
+
+    await editor.fill("# Edited file\n\n## Updated section\n\n");
+    await editor.press("ControlOrMeta+End");
+    await editor.pressSequentially("copy + paste");
+    await editor.evaluate((element) => {
+      const data = new DataTransfer();
+      data.setData("text/plain", "should stay in the editor");
+      const event = new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true });
+      element.dispatchEvent(event);
+      if (event.defaultPrevented) {
+        throw new Error("The global paste handler intercepted editing");
+      }
+    });
+    await page.getByRole("button", { name: "Show Markdown preview" }).click();
+
+    await assertVisibleText(page, "Edited file");
+    await assertVisibleText(page, "copy + paste");
+    assert.equal(await page.locator("#outline-list").getByRole("link", { name: "Updated section" }).isVisible(), true);
+    await page.reload();
+    await assertVisibleText(page, "Edited file");
+    await toggle.click();
+    assert.equal(await editor.inputValue(), "# Edited file\n\n## Updated section\n\ncopy + paste");
+  } finally {
+    await browser.close();
+  }
+});
+
+test("keeps editing available for empty content and resets it when clearing or loading a file", { timeout: 15000 }, async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage();
+  await routeStaticFiles(page);
+  try {
+    await page.goto(appUrl);
+    await page.locator("#file-input").setInputFiles(samplePath);
+    await page.locator("#edit-toggle").click();
+    const editor = page.getByRole("textbox", { name: "Markdown source" });
+    await editor.waitFor({ state: "visible", timeout: 1500 });
+    await editor.fill("");
+    await page.getByRole("button", { name: "Show Markdown preview" }).click();
+    await page.getByRole("button", { name: "Edit Markdown source" }).click();
+    await editor.fill("# Replacement draft");
+    await page.locator("#file-input").setInputFiles(samplePath);
+    await page.locator("#preview").getByRole("heading", { name: "Release Notes" }).waitFor();
+    await assertVisibleText(page, "Release Notes");
+    assert.equal(await editor.isVisible(), false);
+    await page.locator("#edit-toggle").click();
+    assert.match(await editor.inputValue(), /Release Notes/);
+    await page.getByRole("button", { name: "Clear document" }).click();
+    assert.equal(await editor.isVisible(), false);
+    assert.equal(await page.locator("#editor").inputValue(), "");
+    await assertVisibleText(page, "Ready to preview Markdown");
+    await page.reload();
+    await assertVisibleText(page, "Ready to preview Markdown");
+  } finally {
+    await browser.close();
+  }
+});
+
 async function routeStaticFiles(page) {
   await page.route("**/*", async (route) => {
     const url = new URL(route.request().url());

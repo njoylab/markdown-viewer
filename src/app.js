@@ -44,6 +44,8 @@ const copyButton = document.querySelector("#copy-html");
 const shareButton = document.querySelector("#share-link");
 const printButton = document.querySelector("#print");
 const clearButton = document.querySelector("#clear");
+const editToggle = document.querySelector("#edit-toggle");
+const editor = document.querySelector("#editor");
 const textBigger = document.querySelector("#text-bigger");
 const textSmaller = document.querySelector("#text-smaller");
 const docActions = document.querySelector("#doc-actions");
@@ -108,6 +110,8 @@ let headings = [];
 let toc = [];
 let activeId = "";
 let outlineDismissed = false;
+let editing = false;
+let persistCurrentDocument = true;
 // Payload of the shared document on screen; heading hashes keep it so scrolling
 // or following the outline never drops the document from the link.
 let sharePayload = "";
@@ -154,6 +158,11 @@ function renderOutline() {
 function showMarkdown(nextMarkdown, name = "", options = {}) {
   markdown = String(nextMarkdown ?? "");
   documentName = String(name ?? "");
+  if (!options.fromEditor) {
+    editor.value = markdown;
+    setEditing(false);
+    persistCurrentDocument = options.persist !== false;
+  }
 
   const result = renderDocument(markdown);
   headings = result.headings;
@@ -163,7 +172,7 @@ function showMarkdown(nextMarkdown, name = "", options = {}) {
   document.title = result.title ? `${result.title} · Markdown Viewer` : "Markdown Viewer";
 
   // Shared documents are never persisted, and must not touch the stored session.
-  if (options.persist !== false) {
+  if (persistCurrentDocument) {
     if (markdown === "") {
       clearDocument(storage);
     } else {
@@ -174,12 +183,14 @@ function showMarkdown(nextMarkdown, name = "", options = {}) {
   sharePayload = options.sharePayload ?? "";
   replaceHash(headingFragment(hashHeading()));
 
-  setDocActionsVisible(markdown !== "");
+  setDocActionsVisible(true);
 
   renderOutline();
-  scrollToHash(window.location.hash, { smooth: false });
-  spyPausedUntil = 0;
-  updateScrollSpy();
+  if (!options.fromEditor) {
+    scrollToHash(window.location.hash, { smooth: false });
+    spyPausedUntil = 0;
+    updateScrollSpy();
+  }
 
   if (options.animate) {
     uploadButton.classList.remove("is-uploading");
@@ -197,6 +208,8 @@ function resetDocument() {
   documentName = "";
   headings = [];
   toc = [];
+  editor.value = "";
+  setEditing(false);
   preview.innerHTML = placeholderHtml;
   document.title = "Markdown Viewer";
   clearDocument(storage);
@@ -314,7 +327,7 @@ document.addEventListener("paste", (event) => {
 });
 
 function setOutlineVisible(visible) {
-  const next = visible && toc.length > 0;
+  const next = visible && toc.length > 0 && !editing;
   outline.hidden = !next;
   workspace.dataset.outline = next ? "visible" : "hidden";
   outlineToggle.setAttribute("aria-pressed", String(next));
@@ -331,6 +344,32 @@ outlineToggle.addEventListener("click", () => {
 });
 
 clearButton.addEventListener("click", resetDocument);
+
+function setEditing(next) {
+  editing = next;
+  editor.hidden = !editing;
+  preview.hidden = editing;
+  editToggle.setAttribute("aria-pressed", String(editing));
+  const label = editing ? "Show Markdown preview" : "Edit Markdown source";
+  editToggle.setAttribute("aria-label", label);
+  editToggle.title = label;
+  setOutlineVisible(!outlineDismissed);
+}
+
+editToggle.addEventListener("click", () => {
+  setEditing(!editing);
+  if (editing) {
+    editor.focus();
+  } else {
+    updateScrollSpy();
+  }
+});
+
+editor.addEventListener("input", () => {
+  clearError();
+  showMarkdown(editor.value, documentName, { fromEditor: true });
+  showStatus("");
+});
 
 outlineList.addEventListener("click", (event) => {
   const link = event.target instanceof Element ? event.target.closest("a[data-heading]") : null;
@@ -463,11 +502,18 @@ async function copyShareLink() {
     return;
   }
 
+  const source = markdown;
+  const name = documentName;
   let payload;
   try {
-    payload = await encodeShare(markdown, documentName);
+    payload = await encodeShare(source, name);
   } catch {
     showStatus("The document could not be encoded.");
+    return;
+  }
+
+  if (source !== markdown || name !== documentName) {
+    showStatus("The document changed. Copy a new share link.");
     return;
   }
 

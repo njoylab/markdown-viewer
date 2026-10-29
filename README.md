@@ -14,6 +14,7 @@ Open `http://127.0.0.1:3000`, upload a `.md` file and preview formatted Markdown
 
 - Drag-and-drop a `.md`, `.markdown` or `.txt` file anywhere on the page, or upload it with the button.
 - Paste Markdown from the clipboard with `Ctrl+V` / `Cmd+V`.
+- Edit a loaded document with the pencil button; click it again to return to the updated preview. Changes are kept in the browser session, without modifying the original file. Shared documents can be edited too; copy a new share link to keep those changes without replacing the saved local document.
 - YAML frontmatter is parsed and shown as a metadata card with title, tag badges and key/value fields.
 - GitHub-flavoured tables with column alignment and task lists with checkboxes.
 - Syntax highlighting for fenced code blocks (JavaScript/TypeScript, JSON, CSS, HTML, shell, Python).
