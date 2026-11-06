@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { chromium } from "playwright";
 import { contentType } from "../../scripts/content-type.mjs";
+import { encodeShare } from "../../src/share.js";
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(testDir, "../..");
@@ -59,6 +60,23 @@ test("copies a share link that restores the document without local storage", { t
     await visitorContext.close();
   } finally {
     await context.close();
+    await browser.close();
+  }
+});
+
+test("keeps a shared document in the URL when following an anchor in its text", { timeout: 20000 }, async () => {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await routeStaticFiles(page);
+    const payload = await encodeShare("# Shared draft\n\n[Go to details](#details)\n\n# Details");
+    await page.goto(`${appUrl}#d=${payload}`);
+
+    await page.getByRole("link", { name: "Go to details" }).click();
+    await page.waitForURL(`${appUrl}#d=${payload}&h=details`, { timeout: 3000 });
+    await page.reload();
+    await page.getByRole("heading", { name: "Details", exact: true }).waitFor();
+  } finally {
     await browser.close();
   }
 });

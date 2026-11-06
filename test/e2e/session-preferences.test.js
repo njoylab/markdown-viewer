@@ -26,6 +26,26 @@ test("restores the last document after a reload", { timeout: 20000 }, async () =
   }
 });
 
+test("previews Markdown when access to localStorage is denied", { timeout: 20000 }, async () => {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await page.addInitScript(() => {
+      Object.defineProperty(window, "localStorage", {
+        get() { throw new DOMException("Access denied", "SecurityError"); }
+      });
+    });
+    await routeStaticFiles(page);
+    await page.goto(appUrl);
+
+    await paste(page, "# Preview without storage");
+    await page.getByRole("heading", { name: "Preview without storage" }).waitFor({ timeout: 3000 });
+    assert.match(await page.locator("#upload-error").textContent(), /storage is unavailable/i);
+  } finally {
+    await browser.close();
+  }
+});
+
 test("restores the uploaded file name", { timeout: 20000 }, async () => {
   const { browser, page } = await openPage();
   try {

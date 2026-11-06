@@ -28,7 +28,7 @@ import {
 } from "./theme.js";
 import { buildToc, decodeHash, findHeadingById } from "./toc.js";
 
-const storage = window.localStorage;
+const storage = getLocalStorage();
 
 const input = document.querySelector("#file-input");
 const uploadButton = document.querySelector(".upload-button");
@@ -117,6 +117,14 @@ let persistCurrentDocument = true;
 // Payload of the shared document on screen; heading hashes keep it so scrolling
 // or following the outline never drops the document from the link.
 let sharePayload = "";
+
+function getLocalStorage() {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
 
 function headingFragment(id) {
   return buildShareHash(sharePayload, id);
@@ -217,12 +225,12 @@ function resetDocument() {
   setEditing(false);
   preview.innerHTML = placeholderHtml;
   document.title = "Markdown Viewer";
-  clearDocument(storage);
+  const cleared = clearDocument(storage);
   sharePayload = "";
   replaceHash("");
   setDocActionsVisible(false);
   renderOutline();
-  showStatus("Cleared the stored document.");
+  showStatus(cleared ? "Cleared the stored document." : "Cleared the preview.");
 }
 
 function isMarkdownFile(file) {
@@ -267,6 +275,22 @@ preview.addEventListener("click", (event) => {
   if (button instanceof HTMLButtonElement) {
     clearError();
     showMarkdown(examples[button.dataset.example], "", { message: "Loaded an example document." });
+    return;
+  }
+
+  const link = event.target.closest('a[href^="#"]');
+  if (!sharePayload || !link || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+    return;
+  }
+
+  event.preventDefault();
+  const id = decodeHash(link.hash);
+  const hash = headingFragment(id);
+  if (hash !== window.location.hash) {
+    history.pushState(null, "", hash);
+  }
+  if (!scrollToHash(hash, { smooth: true })) {
+    scrollToHeading(id, { smooth: true });
   }
 });
 

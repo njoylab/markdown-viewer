@@ -89,6 +89,14 @@ test("renders blockquotes", () => {
   );
 });
 
+test("keeps deeply nested quotes readable without overflowing the stack", () => {
+  const html = renderMarkdown(`${">".repeat(8000)} quoted text\n\n# Next section`);
+
+  assert.match(html, /<p>(?:&gt;)+ quoted text<\/p>/);
+  assert.ok((html.match(/<blockquote>/g) ?? []).length <= 100);
+  assert.match(html, /<h1 id="next-section">Next section<\/h1>$/);
+});
+
 test("applies emphasis inside link labels", () => {
   assert.equal(
     renderMarkdown("[**bold**](https://x.com)"),
@@ -258,6 +266,37 @@ test("formats inline markdown inside table cells", () => {
 
   assert.match(html, /<td><strong>bold<\/strong><\/td>/);
   assert.match(html, /<td><code>code<\/code><\/td>/);
+});
+
+test("keeps escaped pipes inside their cells, including in code spans and at row edges", () => {
+  const html = renderMarkdown("| A | B |\n| --- | --- |\n| a\\|b | c |\n`a\\|b` | c\\|");
+
+  assert.match(html, /<tr><td>a\|b<\/td><td>c<\/td><\/tr>/);
+  assert.match(html, /<tr><td><code>a\|b<\/code><\/td><td>c\|<\/td><\/tr>/);
+});
+
+test("ends tables before other Markdown blocks even if they contain pipes", () => {
+  const table = "| A | B |\n| --- | --- |\n| a | b |\n";
+  const samples = [
+    ["## Title | subtitle", '<h2 id="title-subtitle">Title | subtitle</h2>'],
+    ["> a | b", "<blockquote><p>a | b</p></blockquote>"],
+    ["- a | b", "<ul><li>a | b</li></ul>"],
+    ["1. a | b", "<ol><li>a | b</li></ol>"],
+    ["``` |\na | b\n```", "<pre><code>a | b</code></pre>"]
+  ];
+
+  for (const [source, expected] of samples) {
+    assert.ok(renderMarkdown(table + source).endsWith(`</table>\n${expected}`), source);
+  }
+});
+
+test("keeps wide tables with short rows from expanding into excessive HTML", () => {
+  const source = `${"|x".repeat(500)}|\n${"|-".repeat(500)}|\n${"| value |\n".repeat(500)}`;
+  const html = renderMarkdown(source);
+
+  assert.equal((html.match(/<th>x<\/th>/g) ?? []).length, 500);
+  assert.equal((html.match(/<td>value<\/td>/g) ?? []).length, 500);
+  assert.ok(html.length < source.length * 10, `Rendered ${html.length} characters from ${source.length}`);
 });
 
 test("renders tables without outer pipes and stops at a blank line", () => {

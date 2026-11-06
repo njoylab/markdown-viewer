@@ -9,6 +9,12 @@ const TOKEN_PATTERN = /\uE000(\d+)\uE001/g;
 const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\uE000\uE001]/g;
 const FENCE = /^( {0,3})(`{3,}|~{3,})[ \t]*(.*)$/;
 const INDENTED_CODE = /^(?: {4}|\t)/;
+const BLOCKQUOTE = /^>\s?(.*)$/;
+const HEADING = /^(#{1,6})\s+(.+)$/;
+const UNORDERED_LIST = /^[-*]\s+(.+)$/;
+const ORDERED_LIST = /^(\d+)\.\s+(.+)$/;
+const TABLE_END_BLOCKS = [FENCE, INDENTED_CODE, BLOCKQUOTE, HEADING, UNORDERED_LIST, ORDERED_LIST];
+const MAX_QUOTE_DEPTH = 64;
 const LINK = /\[([^\]]+)\]\(([^)\s]+)\)/g;
 const TASK_ITEM = /^\[( |x|X)\][ \t]+([\s\S]+)$/;
 const LANGUAGE_NAME = /[^a-z0-9_+#.-]/g;
@@ -28,7 +34,7 @@ export function renderMarkdown(markdown, options = {}) {
   return renderLines(lines, headingId);
 }
 
-function renderLines(lines, headingId) {
+function renderLines(lines, headingId, quoteDepth = 0) {
   const blocks = [];
   let list = null;
   let code = null;
@@ -62,7 +68,7 @@ function renderLines(lines, headingId) {
 
   const closeQuote = () => {
     if (quote.length > 0) {
-      blocks.push(`<blockquote>${renderLines(quote, headingId)}</blockquote>`);
+      blocks.push(`<blockquote>${renderLines(quote, headingId, quoteDepth + 1)}</blockquote>`);
       quote = [];
     }
   };
@@ -111,15 +117,19 @@ function renderLines(lines, headingId) {
       continue;
     }
 
-    const quoted = /^>\s?(.*)$/.exec(line);
+    const quoted = BLOCKQUOTE.exec(line);
     if (quoted) {
       closeList();
-      closeParagraph();
-      quote.push(quoted[1]);
+      if (quoteDepth === MAX_QUOTE_DEPTH) {
+        paragraph.push(line);
+      } else {
+        closeParagraph();
+        quote.push(quoted[1]);
+      }
       continue;
     }
 
-    const heading = /^(#{1,6})\s+(.+)$/.exec(line);
+    const heading = HEADING.exec(line);
     if (heading) {
       closeText();
       const level = heading[1].length;
@@ -135,7 +145,7 @@ function renderLines(lines, headingId) {
       continue;
     }
 
-    const unordered = /^[-*]\s+(.+)$/.exec(line);
+    const unordered = UNORDERED_LIST.exec(line);
     if (unordered) {
       closeParagraph();
       closeQuote();
@@ -147,7 +157,7 @@ function renderLines(lines, headingId) {
       continue;
     }
 
-    const ordered = /^(\d+)\.\s+(.+)$/.exec(line);
+    const ordered = ORDERED_LIST.exec(line);
     if (ordered) {
       closeParagraph();
       closeQuote();
@@ -263,7 +273,11 @@ function readTable(lines, start) {
   const rows = [];
   let cursor = start + 2;
   while (cursor < lines.length) {
-    const cells = splitRow(lines[cursor]);
+    const line = lines[cursor];
+    if (TABLE_END_BLOCKS.some((pattern) => pattern.test(line))) {
+      break;
+    }
+    const cells = splitRow(line);
     if (!cells) {
       break;
     }
@@ -274,16 +288,40 @@ function readTable(lines, start) {
   return { header, alignments: divider.map(readAlignment), rows, end: cursor };
 }
 
-function splitRow(line) {
-  const text = String(line).trim();
+function splitRow(line = "") {
+  const text = line.trim();
   if (!text.includes("|")) {
     return null;
   }
-  return text
-    .replace(/^\|/, "")
-    .replace(/\|$/, "")
-    .split("|")
-    .map((cell) => cell.trim());
+
+  const cells = [];
+  let start = 0;
+  let cell = "";
+  let hasSeparator = false;
+  for (const match of text.matchAll(/\\[\\|]|\|/g)) {
+    const token = match[0];
+    if (token === "\\\\") {
+      continue;
+    }
+    cell += text.slice(start, match.index);
+    start = match.index + token.length;
+    if (token === "\\|") {
+      cell += "|";
+      continue;
+    }
+    hasSeparator = true;
+    if (match.index > 0) {
+      cells.push(cell.trim());
+    }
+    cell = "";
+  }
+  if (!hasSeparator) {
+    return null;
+  }
+  if (cell || start < text.length) {
+    cells.push((cell + text.slice(start)).trim());
+  }
+  return cells;
 }
 
 function isDividerRow(cells) {
@@ -311,9 +349,15 @@ function renderTable(header, alignments, rows) {
     .join("");
   const body = rows
     .map((row) => {
-      const cells = header
-        .map((_, index) => `<td${cellClass(alignments[index])}>${formatInline(row[index] ?? "")}</td>`)
+      let cells = row.slice(0, header.length)
+        .map((cell, index) => `<td${cellClass(alignments[index])}>${formatInline(cell)}</td>`)
         .join("");
+      const missing = header.length - row.length;
+      // Keep padding proportional to the row size even for very wide tables.
+      if (missing > 0) {
+        const attributes = missing === 1 ? cellClass(alignments[row.length]) : ` colspan="${missing}"`;
+        cells += `<td${attributes}></td>`;
+      }
       return `<tr>${cells}</tr>`;
     })
     .join("");
